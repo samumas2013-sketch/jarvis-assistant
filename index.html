@@ -97,39 +97,55 @@ function addMessage(text,type){
  chat.scrollTop=chat.scrollHeight;
 }
 
-function speak(text){
- if(!("speechSynthesis" in window))return;
- speechSynthesis.cancel();
- const speech=new SpeechSynthesisUtterance(text);
- speech.lang="de-DE";
- speech.rate=0.95;
- speech.pitch=0.85;
- speechSynthesis.speak(speech);
-}
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
 
-function answer(text){
- let reply;
- const q=text.toLowerCase();
+  speechSynthesis.cancel();
 
- if(q.includes("hallo")||q.includes("guten tag")){
-  reply="Guten Tag, Sir. Schön, dass Sie da sind.";
- }else if(q.includes("wie heißt du")){
-  reply="Mein Name ist JARVIS, Sir. Ihr persönlicher Assistent.";
- }else if(q.includes("uhrzeit")){
-  reply="Es ist "+new Date().toLocaleTimeString("de-DE")+", Sir.";
- }else if(q.includes("datum")){
-  reply="Heute ist der "+new Date().toLocaleDateString("de-DE")+", Sir.";
- }else if(q.includes("wer bist du")){
-  reply="Ich bin JARVIS, Ihr persönlicher digitaler Assistent.";
- }else if(q.includes("hilfe")){
-  reply="Natürlich, Sir. Sie können mir Nachrichten schreiben oder die Sprachsteuerung ausprobieren.";
- }else{
-  reply="Ihre Nachricht ist angekommen, Sir. Mein KI-Gehirn wird in einer späteren Entwicklungsstufe angeschlossen.";
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "de-DE";
+  speech.rate = 0.88;
+  speech.pitch = 0.75;
+  speech.volume = 1;
+
+  speechSynthesis.speak(speech);
  }
- addMessage(reply,"jarvis");
- statusText.textContent="JARVIS ist bereit.";
- speak(reply);
+
+
+async function answer(text){
+  statusText.textContent="JARVIS verarbeitet Ihre Nachricht...";
+
+  try {
+    const response = await fetch(
+      "https://jarvis-brain.samumas2013.workers.dev/chat",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({message:text})
+      }
+    );
+
+    const data = await response.json();
+
+    if(!response.ok){
+      throw new Error(data.error || "Serverfehler");
+    }
+
+    addMessage(data.reply,"jarvis");
+    statusText.textContent="JARVIS ist bereit, Sir.";
+    speak(data.reply);
+
+  } catch(error) {
+    addMessage(
+      "Entschuldigung, Sir. Die Verbindung ist momentan nicht verfügbar.",
+      "jarvis"
+    );
+    statusText.textContent="Verbindungsfehler.";
+  }
 }
+
 
 function send(){
  const text=input.value.trim();
