@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050b18">
+<title>J.A.R.V.I.S.</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#050b18;color:#eaf6ff;
+ font-family:Arial,sans-serif;min-height:100vh;
+ display:flex;flex-direction:column;align-items:center;
+}
+header{text-align:center;padding:28px 10px 5px}
+h1{letter-spacing:8px;color:#39cfff;font-size:30px}
+.status{color:#65d9ff;font-size:12px;letter-spacing:3px}
+.orb{
+ width:180px;height:180px;border-radius:50%;
+ margin:35px auto 20px;
+ border:3px solid #28bfff;
+ box-shadow:0 0 20px #168cff, inset 0 0 30px #168cff;
+ display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(circle,#164b78,#071426 70%);
+ animation:pulse 3s infinite;
+}
+.orb span{font-size:65px;color:#72dcff}
+@keyframes pulse{
+ 50%{box-shadow:0 0 40px #168cff,inset 0 0 40px #168cff}
+}
+#status{text-align:center;color:#70dfff;margin:10px}
+main{width:92%;max-width:520px}
+.chat{
+ height:270px;overflow:auto;padding:12px;
+ border:1px solid #164c76;border-radius:14px;
+ background:#091629;margin:20px 0;
+}
+.msg{padding:11px;margin:9px 0;border-radius:10px;
+ line-height:1.5;overflow-wrap:anywhere}
+.jarvis{background:#103454;color:#bdeaff}
+.user{background:#164d70;text-align:right}
+.controls{display:flex;gap:8px}
+input{
+ flex:1;min-width:0;padding:14px;border-radius:10px;
+ border:1px solid #258bc0;background:#091629;color:white;
+ font-size:16px;
+}
+button{
+ border:1px solid #35bfff;background:#103a60;
+ color:white;padding:13px;border-radius:10px;
+ font-size:15px;cursor:pointer;
+}
+#mic{width:100%;margin-top:12px;padding:17px}
+button:active{background:#1675a9}
+footer{color:#688ba6;font-size:11px;padding:25px}
+</style>
+</head>
+<body>
+<header>
+ <div class="status">PERSONAL AI SYSTEM</div>
+ <h1>J.A.R.V.I.S.</h1>
+ <div class="status">SYSTEM ONLINE</div>
+</header>
+
+<div class="orb"><span>✧</span></div>
+<div id="status">Bereit für deinen Befehl, Sir.</div>
+
+<main>
+ <div class="chat" id="chat">
+  <div class="msg jarvis">
+   Guten Tag, Sir. JARVIS ist bereit.
+   Wie kann ich Ihnen helfen?
+  </div>
+ </div>
+
+ <div class="controls">
+  <input id="message" placeholder="Nachricht eingeben..."
+  autocomplete="off">
+  <button onclick="send()">Senden</button>
+ </div>
+ <button id="mic" onclick="listen()">🎙️ MIT JARVIS SPRECHEN</button>
+</main>
+
+<footer>J.A.R.V.I.S. PERSONAL ASSISTANT · VERSION 1.0</footer>
+
+<script>
+const chat=document.getElementById("chat");
+const input=document.getElementById("message");
+const statusText=document.getElementById("status");
+
+function addMessage(text,type){
+ const div=document.createElement("div");
+ div.className="msg "+type;
+ div.textContent=text;
+ chat.appendChild(div);
+ chat.scrollTop=chat.scrollHeight;
+}
+
+function speak(text){
+ if(!("speechSynthesis" in window))return;
+ speechSynthesis.cancel();
+ const speech=new SpeechSynthesisUtterance(text);
+ speech.lang="de-DE";
+ speech.rate=0.95;
+ speech.pitch=0.85;
+ speechSynthesis.speak(speech);
+}
+
+function answer(text){
+ let reply;
+ const q=text.toLowerCase();
+
+ if(q.includes("hallo")||q.includes("guten tag")){
+  reply="Guten Tag, Sir. Schön, dass Sie da sind.";
+ }else if(q.includes("wie heißt du")){
+  reply="Mein Name ist JARVIS, Sir. Ihr persönlicher Assistent.";
+ }else if(q.includes("uhrzeit")){
+  reply="Es ist "+new Date().toLocaleTimeString("de-DE")+", Sir.";
+ }else if(q.includes("datum")){
+  reply="Heute ist der "+new Date().toLocaleDateString("de-DE")+", Sir.";
+ }else if(q.includes("wer bist du")){
+  reply="Ich bin JARVIS, Ihr persönlicher digitaler Assistent.";
+ }else if(q.includes("hilfe")){
+  reply="Natürlich, Sir. Sie können mir Nachrichten schreiben oder die Sprachsteuerung ausprobieren.";
+ }else{
+  reply="Ihre Nachricht ist angekommen, Sir. Mein KI-Gehirn wird in einer späteren Entwicklungsstufe angeschlossen.";
+ }
+ addMessage(reply,"jarvis");
+ statusText.textContent="JARVIS ist bereit.";
+ speak(reply);
+}
+
+function send(){
+ const text=input.value.trim();
+ if(!text)return;
+ addMessage(text,"user");
+ input.value="";
+ answer(text);
+}
+
+input.addEventListener("keydown",e=>{
+ if(e.key==="Enter")send();
+});
+
+function listen(){
+ const Recognition=window.SpeechRecognition||
+ window.webkitSpeechRecognition;
+ if(!Recognition){
+  statusText.textContent="Spracherkennung wird hier nicht unterstützt.";
+  return;
+ }
+ const recognition=new Recognition();
+ recognition.lang="de-DE";
+ recognition.onstart=()=>{
+  statusText.textContent="Ich höre zu, Sir...";
+ };
+ recognition.onresult=e=>{
+  input.value=e.results[0][0].transcript;
+  send();
+ };
+ recognition.onerror=()=>{
+  statusText.textContent="Sprachfehler. Bitte erneut versuchen.";
+ };
+ recognition.onend=()=>{
+  if(statusText.textContent==="Ich höre zu, Sir..."){
+   statusText.textContent="Bereit für deinen Befehl, Sir.";
+  }
+ };
+ recognition.start();
+}
+</script>
+</body>
+</html>
